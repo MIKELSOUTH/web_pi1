@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Selección de Producto</title>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
   <style>
     body {
       background-color: #fef7e0;
@@ -12,7 +13,6 @@
       padding: 20px;
       text-align: center;
     }
-
     .grid-container {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -20,7 +20,6 @@
       max-width: 400px;
       margin: 20px auto;
     }
-
     .icon {
       position: relative;
       background-color: #ffecb3;
@@ -34,11 +33,14 @@
       cursor: pointer;
       transition: 0.2s ease;
     }
-
     .icon:hover {
       background-color: #fff8e1;
     }
-
+    /* Estilo para el producto seleccionado (mejora visual) */
+    .icon.selected {
+      border-color: #4caf50; /* Borde verde para indicar selección */
+      transform: scale(1.05);
+    }
     .icon span {
       position: absolute;
       bottom: 5px;
@@ -46,125 +48,127 @@
       font-size: 12px;
       color: #7b5e57;
     }
-
-    #formulario {
-      margin-top: 20px;
-    }
-
-    input[type="tel"] {
-      padding: 8px;
-      font-size: 16px;
-      width: 60%;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
-    }
-
     button {
-      padding: 10px 20px;
-      font-size: 16px;
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 18px;
       background-color: #81c784;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
     }
-
     button:hover {
       background-color: #66bb6a;
     }
-
-    #qrContainer {
-      display: none;
-      margin: 0 auto 20px;
-      text-align: center;
-      max-width: 320px;
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
     }
-
-    #qrMessage {
-      font-size: 20px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #d84315;
-    }
-
-    #qrImage {
-      width: 100%;
-      max-width: 300px;
-      border: 4px solid #ffccbc;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    /* Contenedor para el botón de Mercado Pago */
+    #pago-container {
+      margin: 30px auto;
+      width: 320px;
     }
   </style>
 </head>
 <body>
-  <div id="qrContainer">
-    <div id="qrMessage">📲 SCANEA QR en la máquina</div>
-    <img id="qrImage" src="" alt="QR Code" />
+
+  <div id="seccion-seleccion">
+    <h2>Selecciona un producto</h2>
+    <div class="grid-container">
+      <div class="icon" onclick="seleccionarProducto(this, 1)">Coca Cola <span>1</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 2)">Papas Fritas <span>2</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 3)">Galletas <span>3</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 4)">Chocolates <span>4</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 5)">Jugos <span>5</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 6)">Agua <span>6</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 7)">Snacks <span>7</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 8)">Café <span>8</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 9)">Té <span>9</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 10)">Energizantes <span>10</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 11)">Refrescos <span>11</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 12)">Leche <span>12</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 13)">Frutos Secos <span>13</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 14)">Galletas Saladas <span>14</span></div>
+      <div class="icon" onclick="seleccionarProducto(this, 15)">Dulces <span>15</span></div>
+    </div>
+    <button onclick="procederAlPago()">Pagar</button>
   </div>
 
-  <h2>Selecciona un producto</h2>
-  <div class="grid-container">
-    <div class="icon" onclick="seleccionarProducto(1)">Coca Cola <span>1</span></div>
-    <div class="icon" onclick="seleccionarProducto(2)">Papas Fritas <span>2</span></div>
-    <div class="icon" onclick="seleccionarProducto(3)">Galletas <span>3</span></div>
-    <div class="icon" onclick="seleccionarProducto(4)">Chocolates <span>4</span></div>
-    <div class="icon" onclick="seleccionarProducto(5)">Jugos <span>5</span></div>
-    <div class="icon" onclick="seleccionarProducto(6)">Agua <span>6</span></div>
-    <div class="icon" onclick="seleccionarProducto(7)">Snacks <span>7</span></div>
-    <div class="icon" onclick="seleccionarProducto(8)">Café <span>8</span></div>
-    <div class="icon" onclick="seleccionarProducto(9)">Té <span>9</span></div>
-    <div class="icon" onclick="seleccionarProducto(10)">Energizantes <span>10</span></div>
-    <div class="icon" onclick="seleccionarProducto(11)">Refrescos <span>11</span></div>
-    <div class="icon" onclick="seleccionarProducto(12)">Leche <span>12</span></div>
-    <div class="icon" onclick="seleccionarProducto(13)">Frutos Secos <span>13</span></div>
-    <div class="icon" onclick="seleccionarProducto(14)">Galletas Saladas <span>14</span></div>
-    <div class="icon" onclick="seleccionarProducto(15)">Dulces <span>15</span></div>
-  </div>
+  <div id="pago-container"></div>
 
-  <div id="formulario">
-    <h3>Ingresa tu número de WhatsApp</h3>
-    <input type="tel" id="telefono" placeholder="Ej: 912345678" />
-    <br />
-    <button onclick="enviarDatos()">Enviar</button>
-  </div>
 
   <script>
     let productoSeleccionado = null;
 
-    function seleccionarProducto(id) {
+    function seleccionarProducto(elemento, id) {
+      // Quita la clase 'selected' de cualquier otro ícono
+      document.querySelectorAll('.icon.selected').forEach(icon => {
+        icon.classList.remove('selected');
+      });
+      // Agrega la clase 'selected' al ícono que se acaba de clickear
+      elemento.classList.add('selected');
+      // Guarda el ID del producto
       productoSeleccionado = id;
-      document.getElementById('formulario').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function enviarDatos() {
-      const telefono = document.getElementById('telefono').value.trim();
-      if (!telefono || !productoSeleccionado) {
-        alert("Completa el número de teléfono.");
+    // --- 3. LÓGICA DE PAGO MODIFICADA ---
+    function procederAlPago() {
+      if (!productoSeleccionado) {
+        alert("Por favor, selecciona un producto para continuar.");
         return;
       }
 
+      const botonPagar = document.querySelector('#seccion-seleccion button');
+      botonPagar.disabled = true;
+      botonPagar.innerText = 'Procesando...';
+
+      // El cuerpo de la solicitud ahora solo necesita el 'pedido_id'
       const data = {
         pedido_id: productoSeleccionado,
-        telefono: "+56" + telefono,
-        expiracion: 600
       };
 
-      fetch('https://servidor-pi-mjqq.onrender.com/generar_qr', {
+      // Llamamos a la nueva ruta /crear_pago en nuestro servidor de Render
+      fetch('https://servidor-pi-mjqq.onrender.com/crear_pago', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
-        .then(response => response.json())
-        .then(data => {
-          const qrData = data.qr_base64;
-          document.getElementById('qrImage').src = `data:image/png;base64,${qrData}`;
-          document.getElementById('qrContainer').style.display = 'block';
-          document.getElementById('qrContainer').scrollIntoView({ behavior: 'smooth' });
-        })
-        .catch(error => {
-          console.error("Error:", error);
-          alert("Hubo un problema al generar el código QR.");
+      .then(response => response.json())
+      .then(preference => {
+        if (preference.preference_id) {
+          // Si el servidor responde con un ID de preferencia, ocultamos la selección de productos
+          document.getElementById('seccion-seleccion').style.display = 'none';
+          // Y llamamos a la función para mostrar el botón de Mercado Pago
+          renderizarBotonDePago(preference.preference_id);
+        } else {
+          throw new Error('No se recibió preference_id');
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        alert("Hubo un problema al crear la orden de pago. Intenta de nuevo.");
+        botonPagar.disabled = false;
+        botonPagar.innerText = 'Pagar';
+      });
+    }
+
+    // --- 4. FUNCIÓN NUEVA PARA RENDERIZAR EL BOTÓN ---
+    function renderizarBotonDePago(preferenceId) {
+        // Inicializamos el SDK de Mercado Pago con tu Public Key
+        // ¡¡ACCIÓN REQUERIDA!! REEMPLAZA ESTO CON TU PUBLIC KEY DE PRUEBA
+        const mp = new MercadoPago('APP_USR-82de1fa5-388a-4f5a-83c7-829bba7d7e20');
+        // Creamos y mostramos el componente del botón de pago (Brick)
+        mp.bricks().create("wallet", "pago-container", {
+            initialization: {
+                preferenceId: preferenceId,
+            },
+            customization: {
+                texts: {
+                    valueProp: 'smart_option',
+                },
+            },
         });
     }
   </script>
