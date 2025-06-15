@@ -2,44 +2,115 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <title>Gracias por tu Compra</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pago Exitoso</title>
+    
     <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            text-align: center; 
+            padding: 40px; 
             background-color: #f0fdf4; /* Verde muy claro */
             color: #14532d; /* Verde oscuro */
         }
-        .container {
-            text-align: center;
-            padding: 40px;
-            border: 2px solid #4ade80; /* Borde verde */
-            border-radius: 12px;
-            background-color: #dcfce7; /* Verde más claro */
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        .container { 
+            max-width: 350px; 
+            margin: auto; 
         }
-        h1 {
-            margin-top: 0;
-            font-size: 2em;
-            color: #166534;
+        /* Por defecto, el contenedor del QR está oculto */
+        #qr-container { 
+            display: none; 
         }
-        p {
-            font-size: 1.2em;
+        #qr-image { 
+            width: 100%; 
+            max-width: 300px; 
+            border: 4px solid #4ade80; /* Borde verde */
+            border-radius: 10px; 
+            margin-top: 20px; 
+        }
+        #status-message { 
+            font-size: 1.2em; 
+            font-weight: bold; 
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Pago exitoso</h1>
-        <p>Escanea tu CÓDIGO QR en la máquina para retirar tu producto.</p>
+        <div id="status-message">
+            <h1>¡Pago exitoso!</h1>
+            <p>Procesando tu QR, por favor espera un momento...</p>
+        </div>
+
+        <div id="qr-container">
+            <h1>Escanea tu CÓDIGO QR en la máquina para retirar tu producto</h1>
+            <img id="qr-image" src="" alt="Tu Código QR">
+        </div>
     </div>
 
+
+    <script>
+        // Esta función principal se ejecuta automáticamente en cuanto la página termina de cargar.
+        window.onload = function() {
+            
+            // --- PASO A: OBTENER EL ID DEL PAGO ---
+            // Leemos la URL actual del navegador para buscar los parámetros que nos dejó Mercado Pago.
+            const params = new URLSearchParams(window.location.search);
+            const paymentId = params.get('payment_id'); // Buscamos específicamente el ID del pago.
+
+            // Si por alguna razón no encontramos el ID del pago, mostramos un error y detenemos todo.
+            if (!paymentId) {
+                document.getElementById('status-message').innerHTML = '<h1>Error</h1><p>No se encontró un ID de pago en la URL.</p>';
+                return;
+            }
+
+            // --- PASO B: PREGUNTAR AL SERVIDOR POR EL QR ---
+            // Creamos un ciclo que le preguntará a nuestro servidor por el QR cada 3 segundos.
+            // Esto es necesario porque el aviso del webhook puede tardar unos segundos en llegar y ser procesado.
+            let intentos = 0;
+            const maxIntentos = 10; // Intentaremos 10 veces (30 segundos en total)
+
+            const intervalId = setInterval(() => {
+                // Si superamos los intentos, nos detenemos para no quedarnos en un bucle infinito.
+                if (intentos >= maxIntentos) {
+                    clearInterval(intervalId);
+                    document.getElementById('status-message').innerHTML = '<h1>Error</h1><p>No se pudo obtener el QR después de varios intentos. Por favor, contacta a soporte.</p>';
+                    return;
+                }
+                
+                intentos++;
+                console.log(`Intento #${intentos} para obtener el QR del pago ${paymentId}`);
+
+                // Usamos fetch para llamar a nuestra nueva ruta '/get-qr/' en el servidor de Render.
+                fetch(`https://servidor-pi-mjqq.onrender.com/get-qr/${paymentId}`)
+                    .then(response => {
+                        // El servidor nos puede responder de dos formas principales:
+                        if (response.status === 200) { return response.json(); } // 200 OK: ¡Encontró el QR!
+                        if (response.status === 202) { return { status: 'pending' }; } // 202 Accepted: Aún no está listo, sigue esperando.
+                        throw new Error(`Error del servidor: ${response.status}`);
+                    })
+                    .then(data => {
+                        // Si la respuesta del servidor dice que el estado es 'found' (encontrado)...
+                        if (data.status === 'found') {
+                            // 1. ¡ÉXITO! Detenemos las preguntas.
+                            clearInterval(intervalId);
+                            // 2. Ocultamos el mensaje de "procesando...".
+                            document.getElementById('status-message').style.display = 'none';
+                            // 3. Mostramos el contenedor del QR.
+                            document.getElementById('qr-container').style.display = 'block';
+                            // 4. Ponemos la imagen del QR (que vino en base64) en la etiqueta <img>.
+                            document.getElementById('qr-image').src = `data:image/png;base64,${data.qr_base64}`;
+                        }
+                        // Si el estado es 'pending', no hacemos nada y el ciclo volverá a preguntar en 3 segundos.
+                    })
+                    .catch(err => {
+                        // Si ocurre cualquier otro error, detenemos todo y mostramos un mensaje.
+                        console.error('Error al pedir el QR:', err);
+                        clearInterval(intervalId);
+                        document.getElementById('status-message').innerHTML = '<h1>Error</h1><p>Hubo un problema al obtener tu QR.</p>';
+                    });
+            }, 3000); // El ciclo se repite cada 3000 milisegundos (3 segundos).
+        };
+    </script>
 </body>
 </html>
-```
