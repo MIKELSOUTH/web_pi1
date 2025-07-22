@@ -16,7 +16,7 @@
     <div class="container">
         <div id="status-message">
             <h1>¡Pago exitoso!</h1>
-            <p>Procesando tu QR, por favor espera un momento...</p>
+            <p>Procesando tu QR. Esto puede tardar hasta 1 minuto si el servidor está iniciando.<br>Por favor, espera...</p>
         </div>
         <div id="qr-container">
             <h1>Escanea tu CÓDIGO QR en la máquina para retirar tu producto</h1>
@@ -25,7 +25,7 @@
     </div>
     <script>
         window.onload = function() {
-            const SERVIDOR_URL = 'URL_DE_TU_SERVIDOR_EN_RENDER';
+            const SERVIDOR_URL = 'https://servidor-pi-2-0.onrender.com'; // Asegúrate que esta URL esté correcta
             const params = new URLSearchParams(window.location.search);
             const paymentId = params.get('payment_id');
 
@@ -35,7 +35,9 @@
             }
 
             let intentos = 0;
-            const maxIntentos = 10;
+            const maxIntentos = 20; // Hasta 1 minuto
+            const intervaloMilisegundos = 3000;
+
             const intervalId = setInterval(() => {
                 if (intentos >= maxIntentos) {
                     clearInterval(intervalId);
@@ -43,11 +45,10 @@
                     return;
                 }
                 intentos++;
-                console.log(`Intento #${intentos} para obtener el QR del pago ${paymentId}`);
                 fetch(`${SERVIDOR_URL}/get-qr/${paymentId}`)
                     .then(response => {
-                        if (response.status === 200) { return response.json(); }
-                        if (response.status === 202) { return { status: 'pending' }; }
+                        if (response.status === 200) return response.json();
+                        if (response.status === 202) return { status: 'pending' };
                         throw new Error(`Error del servidor: ${response.status}`);
                     })
                     .then(data => {
@@ -63,7 +64,7 @@
                         clearInterval(intervalId);
                         document.getElementById('status-message').innerHTML = '<h1>Error</h1><p>Hubo un problema al obtener tu QR.</p>';
                     });
-            }, 3000);
+            }, intervaloMilisegundos);
         };
     </script>
 </body>
