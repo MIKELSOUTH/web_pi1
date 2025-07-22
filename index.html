@@ -6,74 +6,19 @@
   <title>Selección de Producto</title>
   <script src="https://sdk.mercadopago.com/js/v2"></script>
   <style>
-    body {
-      background-color: #fef7e0;
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      max-width: 400px;
-      margin: 20px auto;
-    }
-    .icon {
-      position: relative;
-      background-color: #ffecb3;
-      border: 2px solid #ffe082;
-      border-radius: 12px;
-      padding: 20px 10px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #4e342e;
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-      cursor: pointer;
-      transition: 0.2s ease;
-    }
-    .icon:hover {
-      background-color: #fff8e1;
-    }
-    /* Estilo para el producto seleccionado (mejora visual) */
-    .icon.selected {
-      border-color: #4caf50; /* Borde verde para indicar selección */
-      transform: scale(1.05);
-    }
-    .icon span {
-      position: absolute;
-      bottom: 5px;
-      left: 8px;
-      font-size: 12px;
-      color: #7b5e57;
-    }
-    button {
-      margin-top: 20px;
-      padding: 12px 25px;
-      font-size: 18px;
-      background-color: #81c784;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #66bb6a;
-    }
-    button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    /* Contenedor para el botón de Mercado Pago */
-    #pago-container {
-      margin: 30px auto;
-      width: 320px;
-    }
+    body { background-color: #fef7e0; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; text-align: center; }
+    .grid-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 400px; margin: 20px auto; }
+    .icon { position: relative; background-color: #ffecb3; border: 2px solid #ffe082; border-radius: 12px; padding: 20px 10px; font-size: 16px; font-weight: bold; color: #4e342e; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1); cursor: pointer; transition: 0.2s ease; }
+    .icon:hover { background-color: #fff8e1; }
+    .icon.selected { border-color: #4caf50; transform: scale(1.05); }
+    .icon span { position: absolute; bottom: 5px; left: 8px; font-size: 12px; color: #7b5e57; }
+    button { margin-top: 20px; padding: 12px 25px; font-size: 18px; background-color: #81c784; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    button:hover { background-color: #66bb6a; }
+    button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    #pago-container { margin: 30px auto; width: 320px; }
   </style>
 </head>
 <body>
-
   <div id="seccion-seleccion">
     <h2>Selecciona un producto</h2>
     <div class="grid-container">
@@ -95,42 +40,32 @@
     </div>
     <button onclick="procederAlPago()">Pagar</button>
   </div>
-
   <div id="pago-container"></div>
-
-
   <script>
     let productoSeleccionado = null;
+    const SERVIDOR_URL = 'URL_DE_TU_SERVIDOR_EN_RENDER'; 
+    const PUBLIC_KEY = 'TU_PUBLIC_KEY_DE_PRUEBA';
+    const MACHINE_ID = 'maquina-001';
 
     function seleccionarProducto(elemento, id) {
-      // Quita la clase 'selected' de cualquier otro ícono
-      document.querySelectorAll('.icon.selected').forEach(icon => {
-        icon.classList.remove('selected');
-      });
-      // Agrega la clase 'selected' al ícono que se acaba de clickear
+      document.querySelectorAll('.icon.selected').forEach(icon => icon.classList.remove('selected'));
       elemento.classList.add('selected');
-      // Guarda el ID del producto
       productoSeleccionado = id;
     }
 
-    // --- 3. LÓGICA DE PAGO MODIFICADA ---
     function procederAlPago() {
       if (!productoSeleccionado) {
         alert("Por favor, selecciona un producto para continuar.");
         return;
       }
-
       const botonPagar = document.querySelector('#seccion-seleccion button');
       botonPagar.disabled = true;
       botonPagar.innerText = 'Procesando...';
-
-      // El cuerpo de la solicitud ahora solo necesita el 'pedido_id'
       const data = {
         pedido_id: productoSeleccionado,
+        machine_id: MACHINE_ID
       };
-
-      // Llamamos a la nueva ruta /crear_pago en nuestro servidor de Render
-      fetch('https://servidor-pi-mjqq.onrender.com/crear_pago', {
+      fetch(`${SERVIDOR_URL}/crear_pago`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -138,9 +73,7 @@
       .then(response => response.json())
       .then(preference => {
         if (preference.preference_id) {
-          // Si el servidor responde con un ID de preferencia, ocultamos la selección de productos
           document.getElementById('seccion-seleccion').style.display = 'none';
-          // Y llamamos a la función para mostrar el botón de Mercado Pago
           renderizarBotonDePago(preference.preference_id);
         } else {
           throw new Error('No se recibió preference_id');
@@ -154,22 +87,12 @@
       });
     }
 
-    // --- 4. FUNCIÓN NUEVA PARA RENDERIZAR EL BOTÓN ---
     function renderizarBotonDePago(preferenceId) {
-        // Inicializamos el SDK de Mercado Pago con tu Public Key
-        // ¡¡ACCIÓN REQUERIDA!! REEMPLAZA ESTO CON TU PUBLIC KEY DE PRUEBA
-        const mp = new MercadoPago('APP_USR-82de1fa5-388a-4f5a-83c7-829bba7d7e20');
-        // Creamos y mostramos el componente del botón de pago (Brick)
-        mp.bricks().create("wallet", "pago-container", {
-            initialization: {
-                preferenceId: preferenceId,
-            },
-            customization: {
-                texts: {
-                    valueProp: 'smart_option',
-                },
-            },
-        });
+      const mp = new MercadoPago(PUBLIC_KEY);
+      mp.bricks().create("wallet", "pago-container", {
+          initialization: { preferenceId: preferenceId },
+          customization: { texts: { valueProp: 'smart_option' } },
+      });
     }
   </script>
 </body>
